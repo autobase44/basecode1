@@ -1,0 +1,13 @@
+{
+  "name": "base-code-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal web app used as a fixture by Base44 Base Code E2E tests.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
