@@ -31,4 +31,4 @@ http
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(page);
   })
-  .listen(PORT, '0.0.0.0', () => console.log(`Listening on ${PORT}`));
+  .listen(PORT, () => console.log(`Listening on ${PORT}`)); // no host: binds :: (IPv4+IPv6) so a `localhost` healthcheck works
