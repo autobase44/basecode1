@@ -1,0 +1,17 @@
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    init: true
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    command: ["sh", "-c", "npm install -g nodemon >/dev/null 2>&1 && exec nodemon --watch server.js server.js"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
