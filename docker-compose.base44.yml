@@ -1,0 +1,23 @@
+# Base44 development compose — runs the app from cloned source with live reload.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # Bind-mount the source so edits are visible immediately.
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      # Allow Vite-style host checks (harmless here; kept for consistency).
+      - __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=${BASE44_PUBLIC_HOST_SUFFIX}
+    # Node 20+ has a built-in --watch mode for live reload of server.js.
+    command: ["node", "--watch", "server.js"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
