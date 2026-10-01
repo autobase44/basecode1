@@ -1,0 +1,22 @@
+# Base44 dev environment for base-code-e2e.
+# Runs the app from the cloned source with Node's built-in --watch for live reload.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # Bind-mount the source so edits are reflected without rebuilding.
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    # node --watch restarts on file changes (built into Node 18+, no extra dependency).
+    command: ["node", "--watch", "server.js"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
