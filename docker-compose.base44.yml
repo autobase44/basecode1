@@ -1,0 +1,19 @@
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # No dependencies to install — just run the source from the bind mount.
+    command: ["sh", "-c", "exec node server.js"]
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
