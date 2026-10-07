@@ -1,0 +1,30 @@
+# Base44 sandbox/dev compose for base-code-e2e.
+#
+# Runs the app FROM THE CLONED SOURCE (bind-mounted, no prebuilt app image) with
+# Node's built-in watcher so edits are picked up without rebuilding:
+#   docker compose -f docker-compose.base44.yml up -d --build
+#
+# The app has no dependencies and no database, so there is no install or
+# migration step. The repo's own Dockerfile is intentionally NOT used here: it
+# bakes the source via COPY, which would freeze the code and break live edits.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      # Passed through from the platform when running in the sandbox preview.
+      - BASE44_PREVIEW_MODE
+    volumes:
+      - .:/app
+    restart: on-failure
+    healthcheck:
+      # /health is an existing read-only route in server.js.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
