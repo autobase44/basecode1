@@ -1,0 +1,31 @@
+# Base44 sandbox dev environment.
+#
+# Runs the app from the cloned source (bind-mounted) with Node's built-in watch
+# mode, so edits to server.js restart the server without an image rebuild.
+# The repo's own Dockerfile is NOT used here: it COPYs the source into an image,
+# which would freeze the code and make edits invisible in the preview.
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      - ./:/app
+    healthcheck:
+      # Probes real application responsiveness via the app's own /health route.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
