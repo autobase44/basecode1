@@ -1,0 +1,42 @@
+# Base44 sandbox/dev compose for this repository.
+#
+# Runs the app from the CLONED SOURCE (bind-mounted) with a live-reload command,
+# never from a prebuilt application image, so edits show up in the preview
+# without rebuilding. The app has no dependencies, no database and no
+# credentials, so there is nothing else to boot.
+#
+#   docker compose -f docker-compose.base44.yml up -d --build
+#
+# Web entry point: host port 3000 -> container 3000.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    ports:
+      # The preview serves host port 3000.
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      # Bind-mount the source so edits are picked up by `node --watch`.
+      - .:/app
+      # Keep container node_modules separate from the host checkout.
+      # (No dependencies here today; this keeps a future `npm install` from
+      # writing into the mounted source tree.)
+      - node_modules:/app/node_modules
+    healthcheck:
+      # Read-only probe of the existing /health endpoint.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: on-failure
+
+volumes:
+  node_modules:
