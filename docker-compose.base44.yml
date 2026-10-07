@@ -1,0 +1,29 @@
+# Base44 sandbox/dev environment for base-code-e2e.
+#
+# Runs the app FROM THE CLONED SOURCE (bind mount + node's built-in watcher),
+# never from the repo's own Dockerfile — that one COPYs the source in at build
+# time, which would freeze the code and hide every edit from the preview.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # No dependencies to install (no npm deps, no DB). `node --watch` restarts
+    # the server when server.js changes on the bind mount.
+    command: ["sh", "-ec", "exec node --watch server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      - .:/app
+    restart: on-failure
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:3000/health | grep -q '\"status\":\"ok\"' || exit 1",
+        ]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
