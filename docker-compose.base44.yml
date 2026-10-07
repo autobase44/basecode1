@@ -1,0 +1,31 @@
+# Base44 sandbox/dev environment for base-code-e2e.
+#
+# Runs the app FROM THE CLONED SOURCE (plain node base image, repo bind-mounted)
+# instead of the repo's Dockerfile, which bakes server.js into the image and would
+# freeze the code. The repo has no dependencies (no node_modules), so there is
+# nothing to install at startup.
+#
+# No secrets: this app has no environment variables and no external services.
+
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "server.js"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+    restart: on-failure
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
