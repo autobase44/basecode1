@@ -1,0 +1,22 @@
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    # Run from the bind-mounted source (NOT the project's Dockerfile, which bakes
+    # the code into an image). This project has no live-reload dev server, so edits
+    # require a `reload_preview` to be reflected.
+    command: ["node", "server.js"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 5
