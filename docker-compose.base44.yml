@@ -1,0 +1,22 @@
+# Base44 development compose — runs the app from the cloned source.
+# Minimal Node.js fixture: no dependencies, no database, no external services.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # Bind-mount the repo source so edits are visible without a rebuild.
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE=${BASE44_PREVIEW_MODE:-}
+    command: ["node", "server.js"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
