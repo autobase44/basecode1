@@ -1,0 +1,32 @@
+# Base44 sandbox/dev compose for base-code-e2e.
+#
+# Runs the app from the CLONED SOURCE (not the repo's production Dockerfile) with a
+# live-reload command, so edits in the sandbox show up in the preview without a rebuild.
+# `node --watch` is the dev server: Node restarts the process whenever a source file changes.
+#
+# The app has no dependencies (no package.json deps), no database and no external secrets,
+# so there is no install/migrate step and no env_file wiring. Port 3000 is the web entry point.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: ["node", "--watch", "server.js"]
+    environment:
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    restart: on-failure
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
