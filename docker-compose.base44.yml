@@ -1,0 +1,21 @@
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    restart: on-failure
+    # Bind-mount the cloned source so edits appear live; run Node's built-in
+    # file watcher for hot reload. No dependencies to install.
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    command: ["node", "--watch", "server.js"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
