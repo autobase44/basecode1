@@ -1,0 +1,32 @@
+# Base44 sandbox/dev environment for this repo.
+#
+# The repo has its own Dockerfile, but that bakes the source into a production
+# image (COPY package.json server.js), which freezes the code and makes every
+# edit invisible in the preview. Here the source is bind-mounted and run with
+# the plain Node runtime instead, so edits are picked up without a rebuild.
+#
+# The app is a dependency-free Node HTTP server (no npm install needed, no
+# database, no environment variables, no external services).
+
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "server.js"]
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
