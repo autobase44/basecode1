@@ -1,0 +1,27 @@
+# Base44 sandbox environment for base-code-e2e.
+#
+# Runs the app from the bind-mounted source (never the repo's own Dockerfile,
+# which COPYes the source and would freeze edits). The app has no dependencies,
+# no database and no environment variables, so there is nothing to install.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # node --watch gives live reload on source edits with no extra dependency.
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    volumes:
+      - .:/app
+    restart: on-failure
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O - http://127.0.0.1:3000/health | grep -q '"status":"ok"' || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
