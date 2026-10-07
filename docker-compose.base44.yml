@@ -1,0 +1,22 @@
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # Bind-mount the cloned source so edits are reflected without a rebuild.
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    # Plain `node server.js` — this fixture has no file watcher; use
+    # reload_preview after editing server.js to see changes in the preview.
+    command: ["node", "server.js"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
