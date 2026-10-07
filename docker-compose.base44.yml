@@ -1,0 +1,24 @@
+# Base44 sandbox runbook for base-code-e2e.
+#
+# The repo's own Dockerfile bakes the source into a production image, so edits
+# would be invisible in the preview. Instead we run the cloned source directly
+# from a plain Node runtime with a bind mount and a watching dev command.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      - ./:/app
+    restart: on-failure
+    healthcheck:
+      # /health is a real read-only endpoint the app already exposes.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
