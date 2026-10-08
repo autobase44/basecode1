@@ -1,0 +1,28 @@
+# Base44 sandbox/dev setup for this repository.
+#
+# The app is a dependency-free Node HTTP server (server.js), so this compose file
+# runs it straight from the bind-mounted working copy with Node's built-in watch
+# mode (live reload) instead of building the production Dockerfile.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    restart: on-failure
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
