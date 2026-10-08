@@ -1,0 +1,19 @@
+services:
+  app:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    command: ["node", "--watch", "server.js"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)throw 1})"]
+      interval: 10s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
