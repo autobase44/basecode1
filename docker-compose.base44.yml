@@ -1,0 +1,23 @@
+# Base44 development environment for base-code-e2e
+# Minimal Node.js app — no dependencies, no env vars, no database.
+# Runs from the cloned source via bind-mount; restart the service after edits
+# (no live-reload dev server available for a raw http server).
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    command: ["node", "server.js"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 3s
