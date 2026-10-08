@@ -1,0 +1,27 @@
+# Base44 sandbox environment for base-code-e2e.
+#
+# Runs the app FROM THE CLONED SOURCE (plain node image + bind mount) so edits
+# are picked up without rebuilding an image. The repo's own Dockerfile is
+# production-oriented (COPYs the source into the image) and is intentionally not
+# used here.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # node --watch is Node's built-in live-reload dev command; there are no
+    # dependencies to install (the app is a single dependency-free server.js).
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+    healthcheck:
+      # Uses the app's own /health endpoint and busybox wget from the base image.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
