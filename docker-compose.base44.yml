@@ -1,0 +1,22 @@
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # Bind-mount the cloned source so edits are reflected without rebuilding.
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    # Plain runtime image + bind mount = dev mode. No framework HMR here, so
+    # we run the server directly; call reload_preview after source edits.
+    command: ["node", "server.js"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
