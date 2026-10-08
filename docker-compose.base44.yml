@@ -1,0 +1,28 @@
+# Base44 sandbox/dev compose for this repo.
+# Runs the app FROM THE CLONED SOURCE (bind mount) so edits show up without rebuilds.
+# The repo has no dependencies and no database, so there is no install/init step.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      - ./:/app
+    healthcheck:
+      # Uses the app's own read-only /health endpoint.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
