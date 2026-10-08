@@ -1,0 +1,39 @@
+# Base44 sandbox dev stack for base-code-e2e.
+#
+# The app is a single dependency-free Node HTTP server (server.js). We run it
+# straight from the cloned source with the repo bind-mounted, using Node's
+# built-in `--watch` flag so edits to server.js restart the server automatically
+# (this project has no live-reload tooling of its own and no dependencies to
+# install, so `node --watch` is the dev-mode equivalent here).
+#
+# The repo's own Dockerfile is NOT used: it bakes the source in with `COPY . .`,
+# which would freeze the code and hide later edits from the preview.
+#
+# The app needs no environment variables and no database, so there are no
+# secrets to wire in.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    restart: on-failure
+    healthcheck:
+      # Probes real application responsiveness via the app's own /health route,
+      # using node (always present in this image).
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
