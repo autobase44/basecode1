@@ -1,0 +1,31 @@
+# Base44 sandbox/dev compose for base-code-e2e.
+#
+# The repo's own Dockerfile bakes source into an image (COPY . .), so it is NOT
+# used here: editing ./server.js in the sandbox would be invisible. Instead the
+# app runs from the bind-mounted source on a plain node base image, with a
+# live-reload watcher (node --watch).
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      # Supplied by the platform as "1" in the sandbox preview; passed through
+      # bare so app code can gate sandbox-only behavior on it.
+      - BASE44_PREVIEW_MODE
+    restart: on-failure
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>r.json()).then(j=>process.exit(j.status==='ok'?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
