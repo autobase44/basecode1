@@ -1,0 +1,25 @@
+# Base44 sandbox dev environment for base-code-e2e.
+#
+# Runs the cloned source (bind-mounted at /app) on a plain Node runtime image with
+# Node's built-in watcher, so edits in the repo show up without rebuilding an image.
+# There are no dependencies, no environment variables and no database.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    volumes:
+      - .:/app
+    environment:
+      # app config (also the port it listens on inside the container)
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    healthcheck:
+      # reads the app's own /health endpoint; busybox wget ships with alpine
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
