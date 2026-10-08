@@ -1,0 +1,20 @@
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    # Install nodemon for live-restart on file edits, then run the app from the bind-mounted source.
+    command: ["sh", "-ec", "npm install -g nodemon >/dev/null 2>&1 && exec nodemon --watch . server.js"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: on-failure
