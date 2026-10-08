@@ -1,0 +1,28 @@
+# Base44 sandbox/dev compose for the base-code-e2e fixture.
+#
+# Runs the app FROM THE CLONED SOURCE (plain node image + bind mount + `node --watch`),
+# never from the repo's own Dockerfile, so edits show up in the preview without a rebuild.
+# The app has no dependencies, no database and no environment variables.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    # `--watch` restarts the server when server.js changes (live reload).
+    command: ["node", "--watch", "server.js"]
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    restart: on-failure
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)throw new Error('status '+r.status);return r.text()}).then(t=>{if(!t.includes('ok'))throw new Error('bad body')}).then(()=>process.exit(0)).catch(e=>{console.error(e.message);process.exit(1)})"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
