@@ -1,0 +1,25 @@
+services:
+  app:
+    # Plain runtime image + bind-mounted source: edits show up without a rebuild.
+    image: node:20-alpine
+    working_dir: /app
+    # Node's built-in watcher restarts the server on source changes.
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: on-failure
