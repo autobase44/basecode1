@@ -1,0 +1,27 @@
+# Base44 sandbox compose for base-code-e2e.
+# Runs the app from the cloned source (bind mount) on a plain Node runtime image,
+# so edits on disk are picked up without rebuilding anything.
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    # node --watch restarts the server when server.js changes -> live reload.
+    command: ["node", "--watch", "server.js"]
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    ports:
+      - "3000:3000"
+    restart: on-failure
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
