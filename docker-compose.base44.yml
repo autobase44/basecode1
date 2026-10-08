@@ -1,0 +1,33 @@
+# Base44 sandbox/dev environment for this repo.
+#
+# The app is a dependency-free Node HTTP server (see server.js) that listens on
+# port 3000. It is run FROM THE CLONED SOURCE (bind-mounted) with a plain Node
+# runtime image, never from the repo's own Dockerfile, so edits are reflected
+# without an image rebuild.
+#
+# Usage: docker compose -f docker-compose.base44.yml up -d --build
+services:
+  web:
+    # Plain runtime base image — this app has no dependencies to install.
+    image: node:20-alpine
+    working_dir: /app
+    # --watch makes Node reload server.js when the mounted source changes.
+    command: ["node", "--watch", "server.js"]
+    ports:
+      # User-facing web entry point must be reachable on host port 3000.
+      - "3000:3000"
+    volumes:
+      # Bind-mount the cloned source so edits live-reload.
+      - ./:/app
+    environment:
+      - PORT=3000
+      # Bare passthrough of the platform-provided preview flag (never hardcoded).
+      - BASE44_PREVIEW_MODE
+    healthcheck:
+      # Probe the app's real /health endpoint with busybox wget (present in alpine).
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
