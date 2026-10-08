@@ -1,0 +1,26 @@
+# Base44 sandbox dev environment.
+# Runs the app from the freshly cloned source (never a prebuilt image) with a
+# live-reloading dev command, so edits appear in the preview without a rebuild.
+services:
+  app:
+    # Plain runtime base image (not the project's own Dockerfile, which bakes the
+    # source in via COPY and would freeze the code).
+    image: node:22-alpine
+    working_dir: /app
+    # node --watch restarts the server on source changes; no dependencies to install.
+    command: ["sh", "-ec", "exec node --watch server.js"]
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      # Bind-mount the checkout so edits are reflected live.
+      - .:/app
+    healthcheck:
+      # Real application responsiveness, via the app's existing /health route.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
