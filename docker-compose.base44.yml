@@ -1,0 +1,29 @@
+# Base44 sandbox runbook — development mode.
+#
+# Runs the app straight from the cloned source (bind mount + Node's built-in
+# watcher) instead of the repo's Dockerfile, which bakes the source in via
+# `COPY` and therefore cannot reflect edits. The app has zero dependencies,
+# so there is nothing to install at startup.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+    restart: on-failure
+    healthcheck:
+      # Probes the app's own read-only endpoint for real responsiveness.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
