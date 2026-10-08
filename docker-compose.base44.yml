@@ -1,0 +1,19 @@
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    command: ["sh", "-c", "npm i -g nodemon && exec nodemon --exec node server.js"]
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE=${BASE44_PREVIEW_MODE:-0}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: on-failure
