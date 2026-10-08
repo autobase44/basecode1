@@ -1,0 +1,25 @@
+# Base44 sandbox/dev compose. Runs the app from the cloned source so edits are
+# live, instead of building the repo Dockerfile (which COPYs source into an image).
+services:
+  web:
+    image: node:22-alpine
+    restart: on-failure
+    working_dir: /app
+    # No dependencies and no live-reload runner in this fixture, so run node directly.
+    command: ["node", "server.js"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
