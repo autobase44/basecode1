@@ -1,0 +1,25 @@
+# Base44 development environment for base-code-e2e.
+#
+# Runs the app from the cloned source (bind-mounted at /app) on a plain Node
+# runtime image, so edits show up in the preview without an image rebuild.
+# The repository's own Dockerfile is intentionally NOT used: it COPYs the
+# source into a production image, which would freeze the code.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # --watch is Node's built-in live reload; the fixture has no dev server.
+    command: ["node", "--watch", "server.js"]
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
