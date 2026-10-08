@@ -1,0 +1,35 @@
+# Base44 sandbox/dev environment for base-code-e2e.
+#
+# Runs the app from the CLONED SOURCE (no prebuilt image, no production Dockerfile):
+# the repository is bind-mounted at /app and the server runs under `node --watch`,
+# so edits to server.js are picked up without rebuilding. The repo has no
+# dependencies, so there is nothing to install at startup.
+#
+#   docker compose -f docker-compose.base44.yml up -d --build
+#
+# Web entry point: host port 3000 -> container port 3000.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    environment:
+      # Bare passthrough so the app can see the platform-provided preview flag.
+      - BASE44_PREVIEW_MODE
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    restart: on-failure
+    healthcheck:
+      # Probe the app's own /health endpoint (read-only, no app changes).
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
