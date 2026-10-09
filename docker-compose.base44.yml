@@ -1,0 +1,29 @@
+# Sandbox dev environment for this repo (Base44).
+# Runs the app FROM THE CLONED SOURCE (bind mount + Node watch mode), never from a
+# prebuilt image, so edits are reflected without a rebuild.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # Node 20's built-in watcher restarts the server on source edits (no deps to install).
+    command: ["node", "--watch", "server.js"]
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    init: true
+    restart: on-failure
+    healthcheck:
+      # Probes real app responsiveness via the existing read-only endpoint.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
