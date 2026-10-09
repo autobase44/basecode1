@@ -1,0 +1,21 @@
+# Base44 sandbox runbook — runs the app FROM THE CLONED SOURCE so edits appear live.
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    # No dependencies to install (package.json has none), so go straight to a
+    # live-reload dev command: node --watch restarts the server on file changes.
+    command: ["sh", "-ec", "exec node --watch server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      - .:/app
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
