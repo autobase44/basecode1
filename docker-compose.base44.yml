@@ -1,0 +1,36 @@
+# Base44 sandbox/dev compose setup.
+#
+# Runs the app FROM THE CLONED SOURCE (repo bind-mounted at /app, plain node:20
+# runtime image) so edits are picked up without rebuilding any image. The repo's
+# own Dockerfile is a production-style image and is intentionally NOT used here.
+#
+# Development command: `node --watch server.js` restarts the process on file
+# changes (Node >= 18 flag; no extra tooling needed). The app has no runtime
+# dependencies, so no install step is required.
+#
+# Ports: the web entry point is exposed on host 3000 (the preview port).
+# No external services or credentials are required by this app.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      # Platform-provided sandbox flag, passed through bare (see sandbox_configuration).
+      - BASE44_PREVIEW_MODE
+    volumes:
+      - ./:/app
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: on-failure
