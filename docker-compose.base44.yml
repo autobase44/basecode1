@@ -1,0 +1,30 @@
+# Base44 dev environment for the base-code-e2e fixture.
+#
+# Runs the app from the cloned source (bind-mounted) with Node's `--watch` so
+# edits on the sandbox are picked up without a rebuild. The repository has no
+# dependencies, environment variables, database, or external services, so there
+# is nothing to install or provision here.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    volumes:
+      - ./:/app
+    healthcheck:
+      # Node 22 ships global fetch; no curl in the alpine base image.
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
