@@ -1,0 +1,25 @@
+services:
+  web:
+    # Plain runtime base image: the app runs from the bind-mounted clone, not a prebuilt image.
+    image: node:20-alpine
+    working_dir: /app
+    # No dependencies and no dev server in this fixture; `--watch` restarts on source edits.
+    command: ["node", "--watch", "server.js"]
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    healthcheck:
+      # node:20-alpine has no curl/wget; node's global fetch can probe the real endpoint.
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: on-failure
