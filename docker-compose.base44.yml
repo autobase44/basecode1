@@ -1,0 +1,33 @@
+# Base44 sandbox runbook — development setup for this repo.
+#
+# The app is a dependency-free Node HTTP server (server.js). We deliberately do
+# NOT build the repo's own Dockerfile: it COPYs the source into an image, which
+# would freeze the code and make edits invisible. Instead we run a plain node
+# base image with the repo bind-mounted, so edits are picked up immediately.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # --watch restarts the server on source changes (Node >= 20), so edits show up.
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+      # Platform-provided preview flag; absent/empty means normal behavior.
+      - BASE44_PREVIEW_MODE
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
