@@ -1,0 +1,25 @@
+# Base44 dev environment.
+#
+# Runs the app straight from the cloned source (bind mount) with Node's built-in
+# watcher, so edits on disk are picked up without rebuilding an image. The repo
+# has no runtime dependencies and no environment variables, so there is nothing
+# to install at startup and no secrets to wire in.
+
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: on-failure
