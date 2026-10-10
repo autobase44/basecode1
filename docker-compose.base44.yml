@@ -1,0 +1,19 @@
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE=${BASE44_PREVIEW_MODE:-0}
+    command: ["node", "--watch", "server.js"]
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
