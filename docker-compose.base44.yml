@@ -1,0 +1,31 @@
+# Base44 sandbox/dev compose. Runs the app FROM THE CLONED SOURCE with a live-reload
+# dev command so edits show up without rebuilding an image.
+#
+# Usage: docker compose -f docker-compose.base44.yml up -d
+#
+# The app (server.js) has no dependencies, no database and no environment variables,
+# so there is nothing to install and nothing to migrate.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    # `node --watch` is the built-in live-reload dev command (no nodemon dependency).
+    command: ["sh", "-ec", "exec node --watch server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      # Whole checkout mounted so source edits are picked up by the watcher.
+      - ./:/app
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
+    labels:
+      base44.project: "base-code-e2e"
+      base44.kind: "web"
+      base44.port: "3000"
