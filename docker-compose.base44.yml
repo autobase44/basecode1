@@ -1,0 +1,21 @@
+# Base44 sandbox/dev compose for this repo.
+# Runs the app FROM THE CLONED SOURCE (bind-mounted) with Node's watch mode, so
+# edits to server.js restart the server and show up in the preview without a rebuild.
+services:
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
