@@ -1,0 +1,43 @@
+# Base44 sandbox/development environment for base-code-e2e.
+#
+# This project is a single dependency-free Node HTTP server (see server.js).
+# It runs FROM THE CLONED SOURCE on a plain node runtime base image with the
+# repo bind-mounted, so edits are picked up without an image rebuild.
+#
+# The repo's own Dockerfile is intentionally NOT used here: it bakes the
+# source in with `COPY` (a frozen, production-style image), so edits would not
+# appear. It is left untouched for the repo's own e2e fixture usage.
+#
+# No database, no cache, and no external services are required, so no secrets
+# and no /run/base44/app.env wiring are needed.
+
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    ports:
+      - "3000:3000"
+    restart: on-failure
+    healthcheck:
+      # Probes real application responses: the JSON health endpoint and the
+      # rendered page marker. Uses busybox wget, already present in the image.
+      test:
+        - CMD-SHELL
+        - >-
+          wget -qO- http://127.0.0.1:3000/health | grep -q '"status":"ok"'
+          && wget -qO- http://127.0.0.1:3000/ | grep -q 'Base Code E2E'
+          || (echo "web unhealthy: /health or / did not respond as expected" >&2; exit 1)
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    labels:
+      base44.project: "base-code-e2e"
+      base44.kind: "web"
+      base44.port: "3000"
