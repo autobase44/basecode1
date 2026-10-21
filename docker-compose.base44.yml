@@ -1,0 +1,33 @@
+# Base44 sandbox/dev environment for the base-code-e2e fixture.
+#
+# The app is a single dependency-free Node HTTP server, so we run it from the
+# cloned source (bind mount) on a plain node runtime image with the built-in
+# watcher (`node --watch`) instead of the repo's Dockerfile, which bakes the
+# source via COPY and would freeze edits. No database, no env vars, no secrets.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - BASE44_PREVIEW_MODE
+    volumes:
+      - ./:/app
+    restart: on-failure
+    labels:
+      base44.project: "base-code-e2e"
+      base44.kind: "web"
+      base44.port: "3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get({host:'127.0.0.1',port:3000,path:'/health'},r=>{r.resume();process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
