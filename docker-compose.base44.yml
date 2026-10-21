@@ -1,0 +1,31 @@
+# Base44 sandbox runbook: runs the app FROM THE CLONED SOURCE with a live-reload
+# dev command, so edits in the repo show up in the preview without a rebuild.
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    # No dependencies to install; --watch restarts the server when source files change.
+    command: ["node", "--watch", "server.js"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000
+      # Passed through bare so the app can detect the sandbox preview, if it ever needs to.
+      - BASE44_PREVIEW_MODE
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
+    labels:
+      base44.project: "Base Code E2E"
+      base44.kind: web
+      base44.port: "3000"
