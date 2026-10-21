@@ -1,0 +1,33 @@
+services:
+  web:
+    # Plain runtime base image; the app code is bind-mounted from the sandbox so
+    # edits are picked up without an image rebuild (the repo Dockerfile bakes the
+    # source with COPY and is therefore not used here).
+    image: node:20-alpine
+    working_dir: /app
+    # No dependencies to install. `node --watch` restarts the server when server.js
+    # or other sources change, so the sandbox edit loop stays live.
+    command: ["sh", "-ec", "exec node --watch server.js"]
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      # Bare platform flag, passed through unchanged (see AGENTS.md).
+      - BASE44_PREVIEW_MODE
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
+    labels:
+      - base44.project=base-code-e2e
+      - base44.kind=web
+      - base44.port=3000
