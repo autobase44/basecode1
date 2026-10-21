@@ -1,0 +1,65 @@
+# Base44 sandbox / development stack.
+#
+# Runs the app FROM THE CLONED SOURCE (bind mount), so edits to server.js show up
+# without rebuilding an image. The repo's own Dockerfile is deliberately NOT used
+# here: it COPYs the source into an image, which would freeze the code. The
+# Dockerfile still applies to the standalone `docker run` flow in the README.
+#
+# Why a polling supervisor instead of `node --watch`: node's built-in watcher
+# follows the file *inode*, and editors/tools commonly save by writing a temp file
+# and renaming it over server.js. After the first such save the watcher is left
+# pointing at the unlinked inode and every later change is ignored (verified: only
+# save #1 reloaded). The inline supervisor below re-stats the path every 500ms, so
+# it reloads on every write style, and it restarts the app if it crashes while a
+# broken file is being fixed.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command:
+      - node
+      - -e
+      - |
+        const { spawn } = require('node:child_process');
+        const fs = require('node:fs');
+        const sig = () => { try { const s = fs.statSync('server.js'); return s.size + ':' + s.mtimeMs; } catch { return 'missing'; } };
+        let child;
+        const launch = () => { child = spawn(process.execPath, ['server.js'], { stdio: 'inherit' }); };
+        launch();
+        child.on('exit', (code, signal) => {
+          if (signal === 'SIGKILL') return;            // our own reload/stop
+          console.log('[dev] server exited, restarting in 1s');
+          setTimeout(launch, 1000);
+        });
+        let cur = sig();
+        setInterval(() => {
+          const next = sig();
+          if (next === cur) return;
+          cur = next;
+          console.log('[dev] change detected, reloading server.js');
+          child.kill('SIGKILL');
+          launch();
+        }, 500);
+        for (const s of ['SIGTERM', 'SIGINT']) process.on(s, () => { child.kill('SIGKILL'); process.exit(0); });
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+    healthcheck:
+      # probes the app itself over HTTP, not just the supervisor process
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
+    labels:
+      base44.project: base-code-e2e
+      base44.kind: web
+      base44.port: "3000"
