@@ -1,0 +1,34 @@
+# Base44 sandbox runbook for base-code-e2e.
+#
+# The app is a single zero-dependency Node HTTP server (server.js). It is run
+# FROM THE CLONED SOURCE via a plain node runtime image with the repo bind
+# mounted, so edits on the host are picked up without a rebuild. The repo's own
+# Dockerfile is intentionally NOT used here: it COPYs the source into an image,
+# which would freeze the code and freeze every later edit out of the preview.
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    # --watch gives live reload; there are no dependencies to install.
+    command: ["node", "--watch", "server.js"]
+    volumes:
+      - ./:/app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: on-failure
+    labels:
+      base44.project: base-code-e2e
+      base44.kind: web
+      base44.port: "3000"
