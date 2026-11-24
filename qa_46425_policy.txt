@@ -1,2 +1,2 @@
 # Product billing policy for refunds
-refund_window_days = 14
+refund_window_days = 7 # tightened to 7 days per finance policy
