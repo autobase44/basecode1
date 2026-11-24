@@ -1,2 +1,2 @@
 # Product billing policy for refunds
-refund_window_days = 14
+refund_window_days = 30 # expanded to 30 days per customer-friendly policy
