@@ -1,0 +1,2 @@
+# Product billing policy for refunds
+refund_window_days = 14
